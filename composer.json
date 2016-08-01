@@ -11,5 +11,8 @@
             "name": "Nam Le",
             "email": "lequocnam2010@gmail.com"
         }
-    ]
+    ],
+    "autoload": {
+        "psr-4": {"Lequocnam\\Orient\\": "src/Lequocnam/Orient"}
+    }
 }
