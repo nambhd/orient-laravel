@@ -22,7 +22,7 @@ Add the package to your `composer.json`:
 ],
 "require": {
     ...
-    "nldanang/orient-laravel": "dev-master"
+    "lequocnam/orient-laravel": "dev-master"
 },
 ```
 Run `composer update` to install this package.
