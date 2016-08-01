@@ -1,0 +1,20 @@
+{
+    "name": "lequocnam/orient-laravel",
+    "description": "This is OrientDB driver for Laravel 5",
+    "type": "library",
+    "require": {
+        "ostico/phporient": "^1.2"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nam Le",
+            "email": "lequocnam2010@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Lequocnam\\Orient\\": "src/Lequocnam/Orient"
+        }
+    }
+}
