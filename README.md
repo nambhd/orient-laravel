@@ -13,12 +13,11 @@ This is a OrientDB driver for Laravel 5.2
 Add the package to your `composer.json`:
 
 ```
-#!json
 
 "repositories": [
     {
         "type": "vcs",
-        "url": "https://namlq@bitbucket.org/nldanang/orient-laravel.git"
+        "url": "httpshttps://github.com/lequocnam/orient-laravel.gitt"
     }
 ],
 "require": {
@@ -32,7 +31,6 @@ Then, add the service provider in `config/app.php`:
 
 
 ```
-#!php
 
 /*
  * Application Service Providers...
@@ -48,7 +46,6 @@ Lequocnam\Orient\OrientServiceProvider::class,
 Open config/database.php make `orientdb` your default connection:
 
 ```
-#!php
 
 'default' => 'orientdb',
 'default_nosql' => 'orientdb', //optional
@@ -69,7 +66,6 @@ Open config/database.php make `orientdb` your default connection:
 In your model:
 
 ```
-#!php
 
 <?php
 
