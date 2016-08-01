@@ -17,7 +17,7 @@ Add the package to your `composer.json`:
 "repositories": [
     {
         "type": "vcs",
-        "url": "httpshttps://github.com/lequocnam/orient-laravel.gitt"
+        "url": "https://github.com/lequocnam/orient-laravel.gitt"
     }
 ],
 "require": {
