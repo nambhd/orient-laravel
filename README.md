@@ -10,11 +10,9 @@ This is a OrientDB driver for Laravel 5.2
 
 ### Installation ###
 
-```
 Run `composer require lequocnam/orient-laravel` to install this package.
 
 Then, add the service provider in `config/app.php`:
-
 
 ```
 
