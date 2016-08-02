@@ -7,14 +7,27 @@ use Illuminate\Database\Eloquent\Collection;
 use Lequocnam\Orient\Query\Builder as QueryBuilder;
 use Illuminate\Database\Connection as BaseConnection;
 
-
-
 class Connection extends BaseConnection
 {
+    /**
+     * @var PhpOrient, OrientDB client
+     **/
 	protected $client;
 
-	protected $transaction;
+    /**
+     * @var Boolean, whether or not the driver is currently handling an open transaction
+     * Don't support nested transactions
+     */
+    protected $inTransaction;
 
+    /**
+     * @var Array, Transaction commands
+     **/
+    protected $transactionCommands;
+
+    /**
+     * @var String, Driver name
+     **/
 	protected $driverName = 'orientdb';
 
 	public function __construct(array $config = [])
@@ -27,6 +40,14 @@ class Connection extends BaseConnection
 		$this->useDefaultQueryGrammar();
 
 		$this->useDefaultPostProcessor();
+
+        // $this->transaction = null;
+
+        $this->inTransaction = false;
+
+        $this->transactionCommands = [];
+
+        $this->transactions = 0;
 	}
 
 	public function getClient()
@@ -154,20 +175,29 @@ class Connection extends BaseConnection
             // of the database result set. Each element in the array will be a single
             // row from the database table, and will either be an array or objects.
          	
-         	$result = $me->client->query($query);
-         	
-	        $instances  = array();
-	        
-	        foreach ($result as $record)
-	        {
-	        	$data = $record->getOData();
-	        	$data['@rid'] = $record->getRid();
-	            $model = (object) $data;
+            if ($this->inTransaction)
+            {
+                $this->addTransactionCommand($query);
+            }
+            else
+            {
+             	$result = $me->client->query($query);
+             	
+    	        $instances  = array();
+    	        
+    	        foreach ($result as $record)
+    	        {
+    	        	$data = $record->getOData();
+    	        	$data['@rid'] = $record->getRid();
+    	            $model = (object) $data;
 
-	            $instances[] = $model;
-	        }
+    	            $instances[] = $model;
+    	        }
 
-	        return $instances;
+    	        return $instances;
+            }
+
+            return [];
         });
     }
 
@@ -188,10 +218,18 @@ class Connection extends BaseConnection
             $bindings = $me->prepareBindings($bindings);
 
             // return $me->getPdo()->prepare($query)->execute($bindings);
-            $result = $me->client->command($query);
-            if ($result && !empty($result->getOData()))
+            
+            if ($this->inTransaction)
             {
-            	return true;
+                $this->addTransactionCommand($query);
+            }
+            else
+            {
+                $result = $me->client->command($query);
+                if ($result && !empty($result->getOData()))
+                {
+                    return true;
+                }
             }
 
             return false;
@@ -222,13 +260,123 @@ class Connection extends BaseConnection
 
             // return $statement->rowCount();
 
-            $result = $me->client->command($query);
-            if ($result)
+            if ($this->inTransaction)
             {
-            	return $result->getOData()['result'];
+                $this->addTransactionCommand($query);
+            }
+            else
+            {
+                $result = $me->client->command($query);
+                if ($result)
+                {
+                    return $result->getOData()['result'];
+                }
             }
 
             return 0;
         });
+    }
+
+    /**
+     * Reconnect to the database if a PDO connection is missing.
+     *
+     * @return void
+     */
+    protected function reconnectIfMissingConnection()
+    {
+        if ($this->client == null) {
+            $this->reconnect();
+        }
+    }
+
+    /**
+     * Start a new database transaction.
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function beginTransaction()
+    {
+        if ($this->inTransaction)
+        {
+            throw new \Exception("A Transaction already exists. You can not nest transactions");
+        }
+
+        $this->inTransaction = true;
+
+        $this->transactionCommands = [];
+
+        $this->transactions = 1;
+
+        $this->fireConnectionEvent('beganTransaction');
+    }
+
+    /**
+     * Commit the active database transaction.
+     *
+     * @return void
+     */
+    public function commit()
+    {
+        if (!$this->inTransaction)
+        {
+            throw new \Exception("No transaction was started");
+        }
+        
+        // Commit query
+        $command = "BEGIN;";
+        if (count($this->transactionCommands) > 0)
+        {
+            $command .= implode(";", $this->transactionCommands) . ";";
+        }
+        $command .= "COMMIT;";
+
+        $this->client->sqlBatch($command);
+
+        $this->inTransaction = false;
+
+        $this->transactionCommands = [];
+
+        $this->transactions = 0;
+
+        $this->fireConnectionEvent('committed');
+    }
+
+    /**
+     * Rollback the active database transaction.
+     *
+     * @return void
+     */
+    public function rollBack()
+    {
+        if (!$this->inTransaction)
+        {
+            throw new \Exception("No transaction was started");
+        }
+
+        // Rollback
+        // Nothing to do here
+
+        $this->inTransaction = false;
+
+        $this->transactionCommands = [];
+
+        $this->transactions = 0;
+
+        $this->fireConnectionEvent('rollingBack');
+    }
+
+    /**
+     * Add new transaction command
+     *
+     * @param $query, String
+     *
+     * @return void
+     */
+    protected function addTransactionCommand($query)
+    {
+        $index = count($this->transactionCommands) + 1;
+
+        $this->transactionCommands[] = "LET t". $index ." = ". $query;
     }
 }
