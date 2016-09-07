@@ -2,18 +2,19 @@
 
 namespace Lequocnam\Orient\Query;
 
+use Illuminate\Database\Query\Builder as BaseBuilder;
 use Lequocnam\Orient\Connection;
 use Lequocnam\Orient\Query\Grammars\Grammar;
-use Illuminate\Database\Query\Builder as BaseBuilder;
 
 class Builder extends BaseBuilder
 {
-     /**
+    /**
      * Create a new query builder instance.
      *
-     * @param  \Lequocnam\Orient\Connection  $connection
-     * @param  \Lequocnam\Orient\Query\Grammars\Grammar  $grammar
-     * @param  \Illuminate\Database\Query\Processors\Processor  $processor
+     * @param \Lequocnam\Orient\Connection                    $connection
+     * @param \Lequocnam\Orient\Query\Grammars\Grammar        $grammar
+     * @param \Illuminate\Database\Query\Processors\Processor $processor
+     *
      * @return void
      */
     public function __construct(Connection $connection,
@@ -28,7 +29,8 @@ class Builder extends BaseBuilder
     /**
      * Delete a record from the database.
      *
-     * @param  mixed  $id
+     * @param mixed $id
+     *
      * @return int
      */
     public function delete($id = null)
@@ -36,7 +38,7 @@ class Builder extends BaseBuilder
         // If an ID is passed to the method, we will set the where clause to check
         // the ID to allow developers to simply and quickly remove a single row
         // from their database without manually specifying the where clauses.
-        if (! is_null($id)) {
+        if (!is_null($id)) {
             $this->where('@rid', '=', $id);
         }
 
@@ -44,6 +46,4 @@ class Builder extends BaseBuilder
 
         return $this->connection->delete($sql, $this->getBindings());
     }
-
-    
 }

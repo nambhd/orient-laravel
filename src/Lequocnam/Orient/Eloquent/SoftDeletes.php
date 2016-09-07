@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\SoftDeletes as BaseSoftDeletes;
 
 trait SoftDeletes
 {
-	use BaseSoftDeletes;
+    use BaseSoftDeletes;
 
-	/**
+    /**
      * Get the fully qualified "deleted at" column.
      *
      * @return string

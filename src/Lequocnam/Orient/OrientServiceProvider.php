@@ -23,7 +23,7 @@ class OrientServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app['db']->extend('orientdb', function($config) {
+        $this->app['db']->extend('orientdb', function ($config) {
             return new Connection($config);
         });
     }

@@ -1,22 +1,21 @@
 <?php
+
 namespace Lequocnam\Orient;
 
-use DateTime, Closure;
-use PhpOrient\PhpOrient;
-use Illuminate\Database\Eloquent\Collection;
-use Lequocnam\Orient\Query\Builder as QueryBuilder;
 use Illuminate\Database\Connection as BaseConnection;
+use Lequocnam\Orient\Query\Builder as QueryBuilder;
+use PhpOrient\PhpOrient;
 
 class Connection extends BaseConnection
 {
     /**
      * @var PhpOrient, OrientDB client
      **/
-	protected $client;
+    protected $client;
 
     /**
      * @var Boolean, whether or not the driver is currently handling an open transaction
-     * Don't support nested transactions
+     *               Don't support nested transactions
      */
     protected $inTransaction;
 
@@ -28,18 +27,18 @@ class Connection extends BaseConnection
     /**
      * @var String, Driver name
      **/
-	protected $driverName = 'orientdb';
+    protected $driverName = 'orientdb';
 
-	public function __construct(array $config = [])
-	{
-		$this->config = $config;
+    public function __construct(array $config = [])
+    {
+        $this->config = $config;
 
-		// Create OrientDB Client
-		$this->client = $this->createConnection();
+        // Create OrientDB Client
+        $this->client = $this->createConnection();
 
-		$this->useDefaultQueryGrammar();
+        $this->useDefaultQueryGrammar();
 
-		$this->useDefaultPostProcessor();
+        $this->useDefaultPostProcessor();
 
         // $this->transaction = null;
 
@@ -48,79 +47,79 @@ class Connection extends BaseConnection
         $this->transactionCommands = [];
 
         $this->transactions = 0;
-	}
+    }
 
-	public function getClient()
-	{
-		return $this->client;
-	}
+    public function getClient()
+    {
+        return $this->client;
+    }
 
-	public function setClient(PhpOrient $client)
-	{
-		$this->client = $client;
-	}
+    public function setClient(PhpOrient $client)
+    {
+        $this->client = $client;
+    }
 
-	public function getHostname()
-	{
-		return $this->getConfig('hostname');
-	}
+    public function getHostname()
+    {
+        return $this->getConfig('hostname');
+    }
 
-	public function getPort()
-	{
-		return $this->getConfig('port');
-	}
+    public function getPort()
+    {
+        return $this->getConfig('port');
+    }
 
-	public function getUsername()
-	{
-		return $this->getConfig('username');
-	}
+    public function getUsername()
+    {
+        return $this->getConfig('username');
+    }
 
-	public function getPassword()
-	{
-		return $this->getConfig('password');
-	}
+    public function getPassword()
+    {
+        return $this->getConfig('password');
+    }
 
-	public function getDatabase()
-	{
-		return $this->getConfig('database');
-	}
+    public function getDatabase()
+    {
+        return $this->getConfig('database');
+    }
 
-	public function getDriverName()
-	{
-		return $this->driverName;
-	}
+    public function getDriverName()
+    {
+        return $this->driverName;
+    }
 
-	public function getConfig($option)
-	{
-		return array_get($this->config, $option);
-	}
+    public function getConfig($option)
+    {
+        return array_get($this->config, $option);
+    }
 
-	public function createConnection()
-	{
-		$client = new PhpOrient();
+    public function createConnection()
+    {
+        $client = new PhpOrient();
 
-		$client->configure([
-			'username' => $this->getUsername(),
-			'password' => $this->getPassword(),
-			'hostname' => $this->getHostname(),
-			'port' => $this->getPort()
-		]);
+        $client->configure([
+            'username' => $this->getUsername(),
+            'password' => $this->getPassword(),
+            'hostname' => $this->getHostname(),
+            'port'     => $this->getPort(),
+        ]);
 
-		$client->connect();
+        $client->connect();
 
-		$client->dbOpen($this->getDatabase(), $this->getUsername(), $this->getPassword());
+        $client->dbOpen($this->getDatabase(), $this->getUsername(), $this->getPassword());
 
-		return $client;
-	}
+        return $client;
+    }
 
-	/**
+    /**
      * Get the default post processor instance.
      *
      * @return Query\Processor
      */
     protected function getDefaultPostProcessor()
     {
-        return new Query\Processor;
+        return new Query\Processor();
     }
 
     /**
@@ -130,13 +129,14 @@ class Connection extends BaseConnection
      */
     protected function getDefaultQueryGrammar()
     {
-        return new Query\Grammars\Grammar;
+        return new Query\Grammars\Grammar();
     }
 
-	/**
+    /**
      * Begin a fluent query against a database table.
      *
-     * @param  string  $table
+     * @param string $table
+     *
      * @return \Lequocnam\Orient\Query\Builder
      */
     public function table($table)
@@ -156,17 +156,18 @@ class Connection extends BaseConnection
         );
     }
 
-	/**
+    /**
      * Run a select statement against the database.
      *
-     * @param  string  $query
-     * @param  array  $bindings
-     * @param  bool  $useReadPdo
+     * @param string $query
+     * @param array  $bindings
+     * @param bool   $useReadPdo
+     *
      * @return array
      */
     public function select($query, $bindings = [], $useReadPdo = true)
     {
-    	return $this->run($query, $bindings, function ($me, $query, $bindings) {
+        return $this->run($query, $bindings, function ($me, $query, $bindings) {
             if ($me->pretending()) {
                 return [];
             }
@@ -174,27 +175,23 @@ class Connection extends BaseConnection
             // For select statements, we'll simply execute the query and return an array
             // of the database result set. Each element in the array will be a single
             // row from the database table, and will either be an array or objects.
-         	
-            if ($this->inTransaction)
-            {
+
+            if ($this->inTransaction) {
                 $this->addTransactionCommand($query);
-            }
-            else
-            {
-             	$result = $me->client->query($query);
-             	
-    	        $instances  = array();
-    	        
-    	        foreach ($result as $record)
-    	        {
-    	        	$data = $record->getOData();
-    	        	$data['@rid'] = $record->getRid();
-    	            $model = (object) $data;
+            } else {
+                $result = $me->client->query($query);
 
-    	            $instances[] = $model;
-    	        }
+                $instances = [];
 
-    	        return $instances;
+                foreach ($result as $record) {
+                    $data = $record->getOData();
+                    $data['@rid'] = $record->getRid();
+                    $model = (object) $data;
+
+                    $instances[] = $model;
+                }
+
+                return $instances;
             }
 
             return [];
@@ -204,8 +201,9 @@ class Connection extends BaseConnection
     /**
      * Execute an SQL statement and return the boolean result.
      *
-     * @param  string  $query
-     * @param  array   $bindings
+     * @param string $query
+     * @param array  $bindings
+     *
      * @return bool
      */
     public function statement($query, $bindings = [])
@@ -218,16 +216,12 @@ class Connection extends BaseConnection
             $bindings = $me->prepareBindings($bindings);
 
             // return $me->getPdo()->prepare($query)->execute($bindings);
-            
-            if ($this->inTransaction)
-            {
+
+            if ($this->inTransaction) {
                 $this->addTransactionCommand($query);
-            }
-            else
-            {
+            } else {
                 $result = $me->client->command($query);
-                if ($result && !empty($result->getOData()))
-                {
+                if ($result && !empty($result->getOData())) {
                     return true;
                 }
             }
@@ -239,8 +233,9 @@ class Connection extends BaseConnection
     /**
      * Run an SQL statement and get the number of rows affected.
      *
-     * @param  string  $query
-     * @param  array   $bindings
+     * @param string $query
+     * @param array  $bindings
+     *
      * @return int
      */
     public function affectingStatement($query, $bindings = [])
@@ -253,22 +248,18 @@ class Connection extends BaseConnection
             // For update or delete statements, we want to get the number of rows affected
             // by the statement and return that back to the developer. We'll first need
             // to execute the statement and then we'll use PDO to fetch the affected.
-            
+
             // $statement = $me->getPdo()->prepare($query);
 
             // $statement->execute($me->prepareBindings($bindings));
 
             // return $statement->rowCount();
 
-            if ($this->inTransaction)
-            {
+            if ($this->inTransaction) {
                 $this->addTransactionCommand($query);
-            }
-            else
-            {
+            } else {
                 $result = $me->client->command($query);
-                if ($result)
-                {
+                if ($result) {
                     return $result->getOData()['result'];
                 }
             }
@@ -292,14 +283,14 @@ class Connection extends BaseConnection
     /**
      * Start a new database transaction.
      *
-     * @return void
      * @throws Exception
+     *
+     * @return void
      */
     public function beginTransaction()
     {
-        if ($this->inTransaction)
-        {
-            throw new \Exception("A Transaction already exists. You can not nest transactions");
+        if ($this->inTransaction) {
+            throw new \Exception('A Transaction already exists. You can not nest transactions');
         }
 
         $this->inTransaction = true;
@@ -318,18 +309,16 @@ class Connection extends BaseConnection
      */
     public function commit()
     {
-        if (!$this->inTransaction)
-        {
-            throw new \Exception("No transaction was started");
+        if (!$this->inTransaction) {
+            throw new \Exception('No transaction was started');
         }
-        
+
         // Commit query
-        $command = "BEGIN;";
-        if (count($this->transactionCommands) > 0)
-        {
-            $command .= implode(";", $this->transactionCommands) . ";";
+        $command = 'BEGIN;';
+        if (count($this->transactionCommands) > 0) {
+            $command .= implode(';', $this->transactionCommands).';';
         }
-        $command .= "COMMIT;";
+        $command .= 'COMMIT;';
 
         $this->client->sqlBatch($command);
 
@@ -349,9 +338,8 @@ class Connection extends BaseConnection
      */
     public function rollBack()
     {
-        if (!$this->inTransaction)
-        {
-            throw new \Exception("No transaction was started");
+        if (!$this->inTransaction) {
+            throw new \Exception('No transaction was started');
         }
 
         // Rollback
@@ -367,7 +355,7 @@ class Connection extends BaseConnection
     }
 
     /**
-     * Add new transaction command
+     * Add new transaction command.
      *
      * @param $query, String
      *
@@ -377,6 +365,6 @@ class Connection extends BaseConnection
     {
         $index = count($this->transactionCommands) + 1;
 
-        $this->transactionCommands[] = "LET t". $index ." = ". $query;
+        $this->transactionCommands[] = 'LET t'.$index.' = '.$query;
     }
 }
