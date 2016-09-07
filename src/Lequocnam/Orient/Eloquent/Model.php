@@ -7,14 +7,14 @@ use Lequocnam\Orient\Query\Builder as QueryBuilder;
 
 class Model extends BaseModel
 {
-	/**
+    /**
      * The primary key for the model.
      *
      * @var string
      */
-	protected $primaryKey = '@rid';
+    protected $primaryKey = '@rid';
 
-	 /**
+    /**
      * The "type" of the primary key @rid.
      *
      * @var string
@@ -31,7 +31,8 @@ class Model extends BaseModel
     /**
      * Create a new Eloquent query builder for the model.
      *
-     * @param  \Lequocnam\Orient\Query\Builder  $query
+     * @param \Lequocnam\Orient\Query\Builder $query
+     *
      * @return \Lequocnam\Orient\Eloquent\Builder|static
      */
     public function newEloquentBuilder($query)
@@ -92,9 +93,8 @@ class Model extends BaseModel
 
         // return $this->casts;
 
-	    return array_merge([
+        return array_merge([
             $this->getKeyName() => $this->keyType,
-        ], $this->casts);       
+        ], $this->casts);
     }
-
 }
